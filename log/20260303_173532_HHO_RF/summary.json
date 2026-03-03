@@ -1,0 +1,33 @@
+{
+  "experiment_id": "20260303_173532_HHO_RF",
+  "feature_selection": {
+    "n_selected": 2,
+    "selection_time_sec": 70.86,
+    "selected_indices": [
+      46,
+      57
+    ]
+  },
+  "model_training": {
+    "training_time_sec": 24.69,
+    "best_hyperparams": {
+      "n_estimators": 13,
+      "max_depth": 2,
+      "min_samples_split": 4,
+      "min_samples_leaf": 1,
+      "max_features": 0.5
+    }
+  },
+  "performance": {
+    "train": {
+      "R2": 0.7054,
+      "RMSE": 1.5938,
+      "RPD": 1.8425
+    },
+    "test": {
+      "R2": 0.3984,
+      "RMSE": 2.4375,
+      "RPD": 1.2893
+    }
+  }
+}
