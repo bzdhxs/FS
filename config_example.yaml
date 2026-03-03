@@ -1,0 +1,17 @@
+algo_name: GA
+algo_params:
+  epoch: 300
+  penalty: 0.4
+  pop_size: 100
+band_end: 164
+band_start: 14
+base_log_dir: log
+data_file: dataSet.csv
+model_name: SVM
+model_params:
+  n_trials: 500
+resource_dir: resource
+show_plots: false
+target_col: TS
+test_size: 0.3
+use_boxcox: true

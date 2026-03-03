@@ -1,0 +1,32 @@
+# FS_SSC Configuration File
+
+# Algorithm and model selection
+algo_name: "HHO"          # Feature selection algorithm (HHO, GA, GWO, MPA, CARS, SPA, PCA)
+model_name: "RF"          # Regression model (PLS, RF, SVM)
+
+# Data settings
+resource_dir: "resource"
+data_file: "dataSet.csv"
+target_col: "TS"          # Target variable column name
+band_start: 14            # Starting band index
+band_end: 164             # Ending band index (exclusive)
+
+# Processing options
+test_size: 0.3            # Test set proportion
+show_plots: false         # Display plots during execution
+
+# Output directory
+base_log_dir: "log"
+
+# Optional: Override algorithm default parameters
+# Uncomment and modify as needed for experiments
+# algo_params:
+#   epoch: 300
+#   pop_size: 200
+#   penalty: 0.3
+
+# Optional: Override model default parameters
+# Uncomment and modify as needed for experiments
+# model_params:
+#   n_trials: 500
+#   cv_folds: 5
