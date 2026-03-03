@@ -445,7 +445,8 @@ def calc_metrics(y_true: np.ndarray, y_pred: np.ndarray, label: str) -> Dict[str
 
 ```python
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, '..')
 import feature_selection
 import model
 from core.registry import list_algorithms, list_models, get_algorithm

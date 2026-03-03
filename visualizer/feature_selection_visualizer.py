@@ -106,9 +106,11 @@ def plot_selected_features(original_data_path, selected_data_path, show=True):
 
         plt.grid(True, linestyle='--', alpha=0.5)
 
-        # Save
-        save_dir = os.path.dirname(selected_data_path)
-        output_filename = os.path.join(save_dir, f"{algo_name}_selection_plot.png")
+        # Save to plots/ subdirectory
+        base_dir = os.path.dirname(os.path.dirname(selected_data_path))  # Go up from data/ to experiment root
+        plots_dir = os.path.join(base_dir, 'plots')
+        os.makedirs(plots_dir, exist_ok=True)
+        output_filename = os.path.join(plots_dir, f"feature_selection_{algo_name}.png")
 
         plt.tight_layout()
         plt.savefig(output_filename, dpi=PLOT_DPI)

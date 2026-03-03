@@ -179,14 +179,16 @@ def main():
         **cfg.algo_params
     )
 
-    selection_path = str(cfg.get_selection_path(output_dir))
+    # Save selected features to data/ subdirectory
+    data_dir = output_dir / 'data'
+    selection_path = str(data_dir / f'selected_features_{cfg.algo_name}.csv')
     is_pca_mode = selector.mode == "extraction"
 
     selection_start = time.time()
     if is_pca_mode:
         logger.info("   Mode: Feature Extraction")
-        pca_train = str(output_dir / 'train_data_pca.csv')
-        pca_test = str(output_dir / 'test_data_pca.csv')
+        pca_train = str(data_dir / 'train_pca.csv')
+        pca_test = str(data_dir / 'test_pca.csv')
 
         result = selector.run_selection(
             input_path=train_csv,

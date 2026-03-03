@@ -24,9 +24,16 @@ log/20260303_171234_HHO_RF/
 ├── summary.json                   # 核心指标汇总(JSON格式)
 ├── logs/                          # 日志文件夹
 │   └── main.log                   # 主流程日志
-├── data/                          # 数据文件夹(预留)
-├── plots/                         # 可视化文件夹(预留)
-└── results/                       # 结果文件夹(预留)
+├── data/                          # 数据文件夹
+│   ├── train.csv                  # 训练集
+│   ├── test.csv                   # 测试集
+│   └── selected_features_HHO.csv  # 选择的特征
+├── plots/                         # 可视化文件夹
+│   ├── feature_selection_HHO.png  # 特征选择可视化
+│   └── prediction_scatter.png     # 预测散点图
+└── results/                       # 结果文件夹
+    ├── predictions.csv            # 预测结果
+    └── metrics.csv                # 评估指标
 ```
 
 #### 2. JSON 配置和结果导出

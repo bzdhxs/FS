@@ -32,9 +32,11 @@ class DataProcessor:
         Returns:
             tuple: (train_file_path, test_file_path)
         """
-        # 1. 定义输出路径
-        train_file = os.path.join(output_dir, 'train_data.csv')
-        test_file = os.path.join(output_dir, 'test_data.csv')
+        # 1. 定义输出路径 - 保存到 data 子目录
+        data_dir = os.path.join(output_dir, 'data')
+        os.makedirs(data_dir, exist_ok=True)
+        train_file = os.path.join(data_dir, 'train.csv')
+        test_file = os.path.join(data_dir, 'test.csv')
 
         # 2. 读取数据
         if not os.path.exists(original_data_path):

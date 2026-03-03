@@ -138,22 +138,28 @@ class BaseModel(ABC):
             f"Test R2: {metrics_test['R2']:.4f} | Test RMSE: {metrics_test['RMSE']:.4f}"
         )
 
-        # 4. Save results
+        # 4. Save results to results/ subdirectory
+        results_dir = os.path.join(output_dir, "results")
+        os.makedirs(results_dir, exist_ok=True)
+        
         pd.DataFrame({
             "Measured": y_test,
             "Predicted": pred_test_trans
-        }).to_csv(os.path.join(output_dir, "prediction_results.csv"), index=False)
+        }).to_csv(os.path.join(results_dir, "predictions.csv"), index=False)
 
         metrics_df = pd.DataFrame([metrics_train, metrics_test])
         metrics_df['Best_Params'] = str(best_params)
-        metrics_df.to_csv(os.path.join(output_dir, "model_metrics.csv"), index=False)
+        metrics_df.to_csv(os.path.join(results_dir, "metrics.csv"), index=False)
 
-        # 5. Visualize
+        # 5. Visualize to plots/ subdirectory
+        plots_dir = os.path.join(output_dir, "plots")
+        os.makedirs(plots_dir, exist_ok=True)
+        
         model_visualizer.plot_regression_results(
             y_train, pred_train_trans,
             y_test, pred_test_trans,
             metrics_train, metrics_test,
-            os.path.join(output_dir, "plot_pred_vs_meas.png")
+            os.path.join(plots_dir, "prediction_scatter.png")
         )
 
         return {
