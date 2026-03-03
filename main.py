@@ -93,11 +93,13 @@ def export_summary_json(output_dir: Path, timestamp: str, cfg: AppConfig,
             "train": {
                 "R2": round(model_result['train_metrics']['R2'], 4),
                 "RMSE": round(model_result['train_metrics']['RMSE'], 4),
+                "MAE": round(model_result['train_metrics']['MAE'], 4),
                 "RPD": round(model_result['train_metrics']['RPD'], 4)
             },
             "test": {
                 "R2": round(model_result['test_metrics']['R2'], 4),
                 "RMSE": round(model_result['test_metrics']['RMSE'], 4),
+                "MAE": round(model_result['test_metrics']['MAE'], 4),
                 "RPD": round(model_result['test_metrics']['RPD'], 4)
             }
         }

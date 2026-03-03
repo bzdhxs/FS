@@ -20,10 +20,13 @@ base_log_dir: "log"
 
 # Optional: Override algorithm default parameters
 # Uncomment and modify as needed for experiments
-# algo_params:
-#   epoch: 300
-#   pop_size: 200
-#   penalty: 0.3
+algo_params:
+  epoch: 200              # Maximum iterations
+  pop_size: 50            # Population size
+  window_size: 8          # Spectral group window size
+  alpha_stability: 0.2    # Weight for CV standard deviation
+  beta_sparsity: 0.1      # Weight for group sparsity
+  n_cv_runs: 5            # Number of CV runs for stability
 
 # Optional: Override model default parameters
 # Uncomment and modify as needed for experiments

@@ -1,3 +1,0 @@
-Set,R2,RMSE,RPD,Best_Params
-Train,0.8567408351151065,1.1114632895193317,2.6420363739582897,"{'n_estimators': 266, 'max_depth': 7, 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2'}"
-Test,0.3695646171764496,2.495267656973861,1.2594464603075373,"{'n_estimators': 266, 'max_depth': 7, 'min_samples_split': 5, 'min_samples_leaf': 2, 'max_features': 'log2'}"

@@ -12,7 +12,7 @@ import os
 
 import pandas as pd
 import numpy as np
-from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.metrics import mean_squared_error, r2_score, mean_absolute_error
 
 from visualizer import model_visualizer
 
@@ -26,13 +26,14 @@ def calc_metrics(y_true: np.ndarray, y_pred: np.ndarray, label: str) -> Dict[str
         label: Dataset label ("Train" or "Test")
 
     Returns:
-        Dict with Set, R2, RMSE, RPD
+        Dict with Set, R2, RMSE, MAE, RPD
     """
     r2 = r2_score(y_true, y_pred)
     rmse = np.sqrt(mean_squared_error(y_true, y_pred))
+    mae = mean_absolute_error(y_true, y_pred)
     rpd = (np.std(y_true) / rmse) if rmse > 1e-6 else 0
 
-    return {"Set": label, "R2": r2, "RMSE": rmse, "RPD": rpd}
+    return {"Set": label, "R2": r2, "RMSE": rmse, "MAE": mae, "RPD": rpd}
 
 
 class BaseModel(ABC):

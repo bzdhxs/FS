@@ -10,6 +10,34 @@
             </Attribute>
           </value>
         </entry>
+        <entry key="\log\20260303_205514_SGHHO_RF\results\metrics.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\log\20260303_205514_SGHHO_RF\results\predictions.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\log\20260303_211355_SGHHO_RF\results\metrics.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
+        <entry key="\log\20260303_211355_SGHHO_RF\results\predictions.csv">
+          <value>
+            <Attribute>
+              <option name="separator" value="," />
+            </Attribute>
+          </value>
+        </entry>
         <entry key="\log\CARS_SVM_20260119_101710\model_metrics.csv">
           <value>
             <Attribute>
