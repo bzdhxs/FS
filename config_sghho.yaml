@@ -1,0 +1,44 @@
+# SG-HHO Configuration Example
+# Spectral Group-based Harris Hawks Optimization for Hyperspectral Feature Selection
+
+# Input/Output
+input_file: resource/dataSet.csv
+output_dir: log  # Will create timestamped subdirectory
+
+# Target variable
+target_col: target
+
+# Band range (0-based indexing)
+band_range:
+  start: 0
+  end: 150
+
+# Train/test split
+test_size: 0.3
+random_state: 42
+
+# Feature selection algorithm
+algorithm: SGHHO
+
+# SG-HHO parameters
+algo_params:
+  epoch: 200              # Maximum iterations (100-300 recommended)
+  pop_size: 50            # Population size (30-100 recommended)
+  window_size: 8          # Spectral group window size (6-10 for 4nm resolution)
+  alpha_stability: 0.2    # Weight for CV standard deviation (0.1-0.3)
+  beta_sparsity: 0.1      # Weight for group sparsity (0.05-0.15)
+  n_cv_runs: 5            # Number of CV runs for stability (3-10)
+
+# Regression model
+model: RF
+
+# Model parameters
+model_params:
+  n_estimators: 100
+  max_depth: 10
+  min_samples_split: 5
+  min_samples_leaf: 2
+  random_state: 42
+
+# Visualization
+enable_plots: true
