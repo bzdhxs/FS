@@ -30,6 +30,8 @@ FS_SSC/
 │   ├── spa.py               # SPA（逐步投影算法）
 │   ├── pca.py               # PCA（特征提取，非选择）
 │   ├── sghho.py             # SG-HHO（改进算法，光谱组结构）
+│   ├── ssahho.py            # SSA-HHO（混合算法）
+│   ├── mshho.py             # MS-HHO（多策略改进）
 │   └── __init__.py          # 自动发现注册
 ├── model/                   # 回归模型（插件式）
 │   ├── base.py              # 基类 BaseModel + calc_metrics
@@ -39,18 +41,37 @@ FS_SSC/
 │   └── __init__.py          # 自动发现注册
 ├── utils/
 │   ├── data_processor.py    # 数据读取与分层抽样
-│   └── data_split.py        # 回归分层抽样（小样本优化）
+│   ├── data_split.py        # 回归分层抽样（小样本优化）
+│   ├── candidate_selector.py
+│   ├── spectral_preprocessor.py
+│   └── spectral_transforms.py
 ├── visualizer/
 │   ├── feature_selection_visualizer.py
 │   └── model_visualizer.py
-├── improve/                 # 改进算法原型
-│   ├── SGHHO.py             # SG-HHO 完整实现（457行）
+├── improve/                 # 改进算法原型（参考实现）
+│   ├── SGHHO.py
+│   ├── MSHHO.py
 │   └── CLHHO.py
+├── scripts/                 # 实验与分析脚本
+│   ├── analysis/            # 分析脚本（check_*, compare_*, analyze_*, test_*）
+│   ├── experiments/         # 实验运行脚本（run_*, ssahho_runner）
+│   ├── preprocessing/       # 预处理脚本
+│   ├── figures/             # 生成的图表
+│   └── README.md
+├── configs/                 # 备用配置文件
+│   ├── config_hho.yaml
+│   ├── config_sghho.yaml
+│   └── config_sghho_standard.yaml
+├── archive/                 # 历史实验数据归档
+│   ├── experiments/         # 按类型分类的实验结果
+│   └── logs/                # 旧的执行日志
+├── doc/                     # 项目文档
+├── test/                    # 测试文件
+├── resource/
+│   └── dataSet.csv          # 原始数据（68样本，169列）
 ├── main.py                  # 主入口（5步管道）
-├── config.yaml              # 运行配置
-├── requirements.txt
-└── resource/
-    └── dataSet.csv          # 原始数据（68样本，169列）
+├── config.yaml              # 默认运行配置
+└── requirements.txt
 ```
 
 ---

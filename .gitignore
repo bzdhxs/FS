@@ -38,6 +38,7 @@ env/
 
 # 日志文件 - 忽略所有日志目录内容
 log/
+/archive
 !log/.gitkeep
 
 # 临时配置文件
