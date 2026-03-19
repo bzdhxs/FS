@@ -1,0 +1,5 @@
+fusion_col,transform,band_name,wavelength
+15,R,b47,534
+21,R,b32,474
+76,SNV,b99,742
+103,LOG,b46,530

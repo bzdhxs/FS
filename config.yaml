@@ -1,8 +1,8 @@
 # FS_SSC Configuration File
 
 # Algorithm and model selection
-algo_name: "HHO"          # Feature selection algorithm (HHO, GA, GWO, MPA, CARS, SPA, PCA)
-model_name: "RF"          # Regression model (PLS, RF, SVM)
+algo_name: "MSHHO"        # Feature selection algorithm (HHO, GA, GWO, MPA, CARS, SPA, PCA, MSHHO)
+model_name: "PLS"          # Regression model (PLS, RF, SVM)
 
 # Data settings
 resource_dir: "resource"
@@ -23,10 +23,7 @@ base_log_dir: "log"
 algo_params:
   epoch: 200              # Maximum iterations
   pop_size: 50            # Population size
-  window_size: 8          # Spectral group window size
-  alpha_stability: 0.2    # Weight for CV standard deviation
-  beta_sparsity: 0.1      # Weight for group sparsity
-  n_cv_runs: 5            # Number of CV runs for stability
+  gamma_redundancy: 0.3   # MS-HHO: redundancy penalty coefficient
 
 # Optional: Override model default parameters
 # Uncomment and modify as needed for experiments

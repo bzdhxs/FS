@@ -19,7 +19,8 @@ class DataProcessor:
                             original_data_path,
                             target_col,
                             output_dir,
-                            test_size=0.3):
+                            test_size=0.3,
+                            random_state=42):
         """
         执行完整流程：读取 -> ID检查 -> 分层抽样 -> 保存
 
@@ -48,7 +49,9 @@ class DataProcessor:
 
         # 3. 确保 Sample_ID 存在 (防止后续合并出错)
         if 'Sample_ID' not in df_full.columns:
-            df_full.insert(0, 'Sample_ID', df_full.index)
+            df_full = pd.concat(
+                [pd.Series(df_full.index, name='Sample_ID'), df_full], axis=1
+            )
 
         # 4. 分离特征与标签
         X = df_full.drop(columns=[target_col])
@@ -57,7 +60,7 @@ class DataProcessor:
         # 5. 执行分层抽样 (Stratified Split)
         self.logger.info(f"   [Processor] 执行分层抽样 (Test Size: {test_size})...")
         X_train, X_test, y_train, y_test = regression_stratified_split(
-            X, y, test_size=test_size, n_bins=5, random_state=42
+            X, y, test_size=test_size, n_bins=5, random_state=random_state
         )
 
         # 6. 合并数据并保存

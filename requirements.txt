@@ -6,3 +6,4 @@ matplotlib>=3.6.0
 optuna>=3.0.0
 mealpy>=3.0.0
 pyyaml>=6.0
+rich>=13.0.0

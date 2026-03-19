@@ -21,6 +21,10 @@ INTERNAL_VAL_SIZE = 0.3
 DEFAULT_RANDOM_STATE = 42
 
 
+# MS-HHO: 停滞检测阈值（连续多少轮无改善则触发 Cauchy 变异）
+STAGNATION_THRESHOLD = 12
+
+
 # Visualization constants
 PLOT_DPI = 300
 PLOT_FONT = 'Times New Roman'

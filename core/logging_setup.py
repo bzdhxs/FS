@@ -7,6 +7,8 @@ and organized output directory structure.
 import logging
 from pathlib import Path
 
+from rich.logging import RichHandler
+
 
 def setup_logger(output_dir: Path, module_name: str = "main", name: str = "FS_SSC") -> logging.Logger:
     """Setup logger with file and console handlers.
@@ -34,17 +36,21 @@ def setup_logger(output_dir: Path, module_name: str = "main", name: str = "FS_SS
     file_handler = logging.FileHandler(log_file, encoding='utf-8')
     file_handler.setLevel(logging.INFO)
 
-    # Console handler
-    console_handler = logging.StreamHandler()
-    console_handler.setLevel(logging.INFO)
-
-    # Formatter
+    # Formatter (仅用于文件日志)
     formatter = logging.Formatter(
         '%(asctime)s - %(levelname)s - %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
     file_handler.setFormatter(formatter)
-    console_handler.setFormatter(formatter)
+
+    # Console handler — 使用 RichHandler 美化
+    console_handler = RichHandler(
+        level=logging.INFO,
+        show_path=False,
+        rich_tracebacks=True,
+        markup=False,
+        log_time_format='%H:%M:%S',
+    )
 
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)

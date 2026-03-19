@@ -1,0 +1,13 @@
+{
+  "HHO": {
+    "epoch": 100.0,
+    "pop_size": 50.0,
+    "penalty": 0.3
+  },
+  "MSHHO": {
+    "epoch": 300.0,
+    "pop_size": 50.0,
+    "penalty": 0.2,
+    "gamma_redundancy": 0.1
+  }
+}

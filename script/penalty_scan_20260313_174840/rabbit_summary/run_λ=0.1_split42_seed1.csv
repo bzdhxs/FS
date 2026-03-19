@@ -1,0 +1,2 @@
+n_selected,selected_feature_names,selected_wavelengths,final_fitness
+4,"b48,b72,b109,b28","538,634,782,458",0.6447049191824732

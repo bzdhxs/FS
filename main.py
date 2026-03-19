@@ -21,6 +21,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from core.config import AppConfig
 from core.logging_setup import setup_logger, create_output_structure
+from core.console import print_banner, print_step_header, print_report_table
 from core.registry import get_algorithm, get_model, list_algorithms, list_models
 from utils.data_processor import DataProcessor
 from visualizer import feature_selection_visualizer as fsv
@@ -133,7 +134,12 @@ def main():
 
     # Setup logger
     logger = setup_logger(output_dir, module_name="main")
-    logger.info(f"Task started: {timestamp}_{cfg.algo_name}_{cfg.model_name}")
+
+    # 打印启动 banner
+    task_id = f"{timestamp}_{cfg.algo_name}_{cfg.model_name}"
+    print_banner(task_id, cfg.algo_name, cfg.model_name)
+
+    logger.info(f"Task started: {task_id}")
     logger.info(f"Available algorithms: {list_algorithms()}")
     logger.info(f"Available models: {list_models()}")
 
@@ -148,6 +154,7 @@ def main():
     # =========================================================
     # Step 1: Data Preprocessing
     # =========================================================
+    print_step_header(1, "Data Preprocessing")
     logger.info("[Step 1] Data preprocessing...")
     processor = DataProcessor(logger)
 
@@ -172,6 +179,7 @@ def main():
     # =========================================================
     # Step 2: Feature Engineering
     # =========================================================
+    print_step_header(2, f"Feature Processing ({cfg.algo_name})")
     logger.info(f"[Step 2] Feature processing ({cfg.algo_name})...")
 
     selector = AlgoClass(
@@ -219,6 +227,7 @@ def main():
     # =========================================================
     # Step 3: Visualization
     # =========================================================
+    print_step_header(3, "Visualization")
     logger.info("[Step 3] Visualization...")
     if not is_pca_mode:
         try:
@@ -235,6 +244,7 @@ def main():
     # =========================================================
     # Step 4: Modeling
     # =========================================================
+    print_step_header(4, f"Modeling ({cfg.model_name})")
     logger.info(f"[Step 4] Modeling ({cfg.model_name})...")
 
     model_instance = ModelClass(logger=logger, **cfg.model_params)
@@ -256,16 +266,19 @@ def main():
     export_summary_json(output_dir, timestamp, cfg, result, model_result, selection_time, modeling_time)
     logger.info("Summary exported to summary.json")
 
-    logger.info("=" * 40)
-    logger.info("FINAL REPORT")
-    logger.info("=" * 40)
-
     train_metrics = model_result['train_metrics']
     test_metrics = model_result['test_metrics']
-    logger.info(f"   [Train] R2={train_metrics['R2']:.4f}, RMSE={train_metrics['RMSE']:.4f}")
-    logger.info(f"   [Test ] R2={test_metrics['R2']:.4f}, RMSE={test_metrics['RMSE']:.4f}")
-    logger.info(f"   [Time ] Selection: {selection_time:.2f}s, Modeling: {modeling_time:.2f}s")
-    logger.info("=" * 40)
+
+    # 控制台：用 rich Table 展示最终报告
+    print_report_table(train_metrics, test_metrics, selection_time, modeling_time)
+
+    # 文件日志：保持纯文本格式
+    logger.info("FINAL REPORT")
+    logger.info(f"  [Train] R2={train_metrics['R2']:.4f}, RMSE={train_metrics['RMSE']:.4f}, "
+                f"MAE={train_metrics['MAE']:.4f}, RPD={train_metrics['RPD']:.4f}")
+    logger.info(f"  [Test ] R2={test_metrics['R2']:.4f}, RMSE={test_metrics['RMSE']:.4f}, "
+                f"MAE={test_metrics['MAE']:.4f}, RPD={test_metrics['RPD']:.4f}")
+    logger.info(f"  [Time ] Selection: {selection_time:.2f}s, Modeling: {modeling_time:.2f}s")
     logger.info("Run Completed.")
 
 

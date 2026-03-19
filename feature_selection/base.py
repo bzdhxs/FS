@@ -49,13 +49,14 @@ class BaseFeatureSelector(ABC):
 
     mode = "selection"  # Override to "extraction" for PCA-like algorithms
 
-    def __init__(self, target_col: str, band_range: Tuple[int, int], logger: Optional[logging.Logger] = None):
+    def __init__(self, target_col: str, band_range: Tuple[int, int], logger: Optional[logging.Logger] = None, **kwargs):
         """Initialize selector.
 
         Args:
             target_col: Target variable column name
             band_range: (start, end) band indices
             logger: Optional logger instance
+            **kwargs: Additional parameters (ignored by base class, used by subclasses)
         """
         self.target_col = target_col
         self.band_range = band_range
@@ -186,13 +187,9 @@ class BaseMealpySelector(BaseFeatureSelector):
         scaler = MinMaxScaler()
         X = scaler.fit_transform(X_raw)
 
-        # Stratified split for internal validation
-        X_train, X_val, y_train, y_val = regression_stratified_split(
-            X, y,
-            test_size=INTERNAL_VAL_SIZE,
-            n_bins=5,
-            random_state=DEFAULT_RANDOM_STATE
-        )
+        # 使用 5 折交叉验证评估适应度（更抗过拟合）
+        from sklearn.model_selection import KFold
+        kf = KFold(n_splits=5, shuffle=True, random_state=DEFAULT_RANDOM_STATE)
 
         # Define unified fitness function
         def fitness_function(solution):
@@ -203,14 +200,25 @@ class BaseMealpySelector(BaseFeatureSelector):
 
             try:
                 n_comp = min(len(sel_idx), MAX_PLS_COMPONENTS)
-                model = PLSRegression(n_components=n_comp)
-                model.fit(X_train[:, sel_idx], y_train)
-                y_pred = model.predict(X_val[:, sel_idx])
+                r2_scores = []
 
-                if y_pred.ndim > 1:
-                    y_pred = y_pred.flatten()
+                # 5 折交叉验证
+                for train_idx, val_idx in kf.split(X):
+                    X_train_fold = X[train_idx][:, sel_idx]
+                    y_train_fold = y[train_idx]
+                    X_val_fold = X[val_idx][:, sel_idx]
+                    y_val_fold = y[val_idx]
 
-                r2 = r2_score(y_val, y_pred)
+                    model = PLSRegression(n_components=n_comp)
+                    model.fit(X_train_fold, y_train_fold)
+                    y_pred = model.predict(X_val_fold)
+
+                    if y_pred.ndim > 1:
+                        y_pred = y_pred.flatten()
+
+                    r2_scores.append(r2_score(y_val_fold, y_pred))
+
+                r2 = np.mean(r2_scores)  # 取 5 折平均 R²
                 ratio = len(sel_idx) / X.shape[1]
 
                 # Unified fitness: (1 - R²) + penalty * ratio
@@ -233,6 +241,7 @@ class BaseMealpySelector(BaseFeatureSelector):
         # Solve
         self.logger.info("Starting optimization...")
         agent = optimizer.solve(problem_dict)
+        self._last_optimizer = optimizer  # 暴露 history 供外部访问收敛曲线
 
         # Extract results
         best_pos = agent.solution
