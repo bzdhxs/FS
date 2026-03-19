@@ -29,7 +29,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 ALGORITHMS = ["HHO", "SGHHO"]
 MODELS = ["PLS", "SVM", "RF"]
 CONFIG_FILES = {
-    "HHO": "config.yaml",
+    "HHO": "config_hho.yaml",
     "SGHHO": "config_sghho_standard.yaml"
 }
 

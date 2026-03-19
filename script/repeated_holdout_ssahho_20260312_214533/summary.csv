@@ -1,3 +1,0 @@
-variant,n_runs,Train_R2_mean,Train_R2_std,Train_RMSE_mean,Train_RMSE_std,Test_R2_mean,Test_R2_std,Test_RMSE_mean,Test_RMSE_std,n_feat_mean,n_feat_std,time_mean_sec,fail_count
-HHO,4,0.4783,0.1158,2.226,0.2189,0.0144,0.6316,2.6289,0.7179,6.0,0.8,0.2,0
-+SCI+SDGE,4,0.4609,0.0987,2.267,0.1743,0.23,0.2532,2.3872,0.2998,5.5,3.7,0.2,0

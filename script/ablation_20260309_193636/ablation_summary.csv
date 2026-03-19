@@ -1,6 +1,0 @@
-variant,Train_R2_mean,Train_R2_std,Train_RMSE_mean,Train_RMSE_std,Train_MAE_mean,Train_MAE_std,Test_R2_mean,Test_R2_std,Test_RMSE_mean,Test_RMSE_std,Test_MAE_mean,Test_MAE_std,n_feat_mean,n_feat_std,time_mean_sec
-HHO,0.4782,,2.2696,,1.7898,,0.2058,,2.3712,,1.7832,,5.0,,0.3
-MSHHO_I1,0.5209,,2.175,,1.7133,,-0.0023,,2.6638,,1.8922,,3.0,,0.3
-MSHHO_I2,0.6839,,1.7665,,1.336,,-0.2794,,3.0096,,2.2213,,7.0,,0.3
-MSHHO_I3,0.4263,,2.3799,,1.8509,,0.1698,,2.4244,,1.7686,,1.0,,0.3
-MSHHO,0.5758,,2.0466,,1.5116,,-0.0218,,2.6896,,1.9508,,9.0,,0.3

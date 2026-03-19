@@ -1,0 +1,19 @@
+# FS_SSC Configuration File - HHO
+
+algo_name: "HHO"
+model_name: "PLS"
+
+resource_dir: "resource"
+data_file: "dataSet.csv"
+target_col: "TS"
+band_start: 14
+band_end: 164
+
+test_size: 0.3
+show_plots: false
+
+base_log_dir: "log"
+
+algo_params:
+  epoch: 200
+  pop_size: 50

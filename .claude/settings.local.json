@@ -33,7 +33,29 @@
       "Bash(git -C /Users/mixianyun/Desktop/FS_SSC show --stat HEAD)",
       "Bash(wc -l /Users/mixianyun/Desktop/FS_SSC/doc/*.md)",
       "WebFetch(domain:pmc.ncbi.nlm.nih.gov)",
-      "WebFetch(domain:www.sciopen.com)"
+      "WebFetch(domain:www.sciopen.com)",
+      "Bash(C:Python314python.exe -m pip install rich)",
+      "Bash(for dir:*)",
+      "Bash(do)",
+      "Bash(echo \"=== $dir ===\")",
+      "Read(//c/_code/FS/log/$dir/**)",
+      "Bash(done)",
+      "Bash(grep \"\\\\.py$\")",
+      "Bash(ls c:/_code/FS/*.py c:/_code/FS/*.yaml c:/_code/FS/*.md c:/_code/FS/*.log)",
+      "Bash(mv ablation_20260309_* ablation_20260310_* ablation_20260312_* ../archive/experiments/ablation/)",
+      "Bash(mv ablation_ssahho_* ../archive/experiments/ablation/)",
+      "Bash(mv comparison_ssahho_* ../archive/experiments/comparison/)",
+      "Bash(mv convergence_* ../archive/experiments/convergence/)",
+      "Bash(mv hyperparam_* ../archive/experiments/hyperparam/)",
+      "Bash(mv 20260303_* 20260319_* ../archive/logs/)",
+      "Bash(mv comparison.log comparison_results.md ../archive/logs/)",
+      "Bash(mv script:*)",
+      "Bash(mkdir -p scripts/analysis scripts/experiments scripts/preprocessing)",
+      "Bash(mv check_convergence.py check_hyperparam.py compare_hho_sghho.py analysis/)",
+      "Bash(mv run_ablation.py run_algo_comparison.py run_penalty_scan.py run_ssahho_ablation.py run_ssahho_comparison.py run_ssahho_repeated_holdout.py ssahho_runner.py experiments/)",
+      "Bash(mv preprocess_spectra.py preprocessing/)",
+      "Bash(mv analyze_results.py test_sghho.py scripts/analysis/)",
+      "Bash(rm -f algo_comparison.log)"
     ]
   }
 }

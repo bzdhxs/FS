@@ -1,6 +1,0 @@
-variant,R2_mean,R2_std,RMSE_mean,RMSE_std,MAE_mean,MAE_std,n_feat_mean,n_feat_std,time_mean_sec
-HHO,-0.0847,,2.7711,,1.8587,,8.0,,0.3
-MSHHO_I1,-0.3515,,3.0932,,2.3487,,9.0,,0.3
-MSHHO_I2,0.1913,,2.3928,,1.7769,,6.0,,0.3
-MSHHO_I3,0.2122,,2.3616,,1.8221,,1.0,,0.3
-MSHHO,0.2352,,2.327,,1.8093,,1.0,,0.3
