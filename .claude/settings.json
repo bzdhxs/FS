@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(echo \"PID: $!\")",
+      "Bash(wmic process:*)",
+      "Bash(taskkill /PID 86724 /F)",
+      "Bash(taskkill /PID 85032 /F)",
+      "Bash(taskkill //PID 86724 //F)",
+      "Bash(taskkill //PID 85032 //F)",
+      "Bash(taskkill //PID 87652 //F)",
+      "Bash(taskkill //PID 39152 //F)",
+      "Bash(taskkill //PID 22700 //F)"
+    ],
+    "additionalDirectories": [
+      "c:\\_code\\FS\\scripts\\experiments"
+    ]
+  }
+}

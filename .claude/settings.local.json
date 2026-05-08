@@ -55,7 +55,27 @@
       "Bash(mv run_ablation.py run_algo_comparison.py run_penalty_scan.py run_ssahho_ablation.py run_ssahho_comparison.py run_ssahho_repeated_holdout.py ssahho_runner.py experiments/)",
       "Bash(mv preprocess_spectra.py preprocessing/)",
       "Bash(mv analyze_results.py test_sghho.py scripts/analysis/)",
-      "Bash(rm -f algo_comparison.log)"
+      "Bash(rm -f algo_comparison.log)",
+      "Bash(xargs grep:*)",
+      "Bash(mv scripts/experiments/abhho_ablation_20260319_202557 log/)",
+      "Bash(mv scripts/experiments/hho_vs_abhho_CR_20260319_232507 log/)",
+      "Bash(mv scripts/experiments/hho_vs_abhho_CR_20260320_105949 log/)",
+      "Bash(mv scripts/experiments/hho_vs_abhho_CR_20260321_033321 log/)",
+      "Bash(mv scripts/experiments/transform_comparison_20260319_213536 log/)",
+      "Bash(python scripts/experiments/run_hho_plhho_comparison.py)",
+      "Bash(echo \"PID=$!\")",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(gh api:*)",
+      "Bash(taskkill /F /FI \"IMAGENAME eq python.exe\" /FI \"WINDOWTITLE eq *run_hho_plhho*\")",
+      "Bash(xargs kill:*)",
+      "Bash(tasklist)",
+      "Bash(taskkill /F /PID 36288)",
+      "Bash(taskkill /F /PID 22768)",
+      "Bash(cmd.exe /c \"taskkill /F /PID 36288\")",
+      "Bash(cmd /c \"taskkill /F /PID 36288 & taskkill /F /PID 22768 & taskkill /F /PID 22752\")",
+      "Bash(powershell -Command \"Get-Process python | Stop-Process -Force; Write-Host 'done'\")",
+      "Bash(powershell -Command \"Get-Process python | Stop-Process -Force; Write-Host done\")"
     ]
   }
 }
