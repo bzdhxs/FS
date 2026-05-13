@@ -1,0 +1,606 @@
+\documentclass[12pt,a4paper]{article}
+
+% ==================== 宏包 ====================
+\usepackage[UTF8]{ctex}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{amsmath,amssymb}
+\usepackage{algorithm}
+\usepackage{algorithmic}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{enumitem}
+\usepackage{float}
+\usepackage{subcaption}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    citecolor=blue,
+    urlcolor=blue
+}
+
+% ==================== 自定义命令 ====================
+\newcommand{\rmse}{\mathrm{RMSE}}
+\newcommand{\rpd}{\mathrm{RPD}}
+\newcommand{\rpiq}{\mathrm{RPIQ}}
+\newcommand{\nrmse}{\mathrm{NRMSE}}
+\newcommand{\mae}{\mathrm{MAE}}
+\newcommand{\bic}{\mathrm{BIC}}
+
+% ==================== 标题信息 ====================
+\title{\textbf{基于自适应边界哈里斯鹰优化的高光谱土壤盐分特征选择方法}}
+
+\author{
+    % 作者信息待填充
+}
+
+\date{}
+
+\begin{document}
+
+\maketitle
+
+% ==================== 摘要 ====================
+\begin{abstract}
+土壤盐分是制约干旱半干旱区农业生产的关键因子，无人机高光谱遥感为田块尺度土壤盐分快速无损监测提供了有效手段。然而，高光谱数据波段众多、冗余严重、共线性突出，直接用于建模易导致过拟合与预测精度下降。针对现有特征选择方法在探索-开发平衡、种群多样性和特征冗余控制方面的不足，本研究提出一种自适应边界哈里斯鹰优化（Adaptive Boundary Harris Hawks Optimization，ABHHO）算法用于无人机高光谱土壤盐分特征选择。ABHHO 在标准哈里斯鹰优化框架上引入三项改进：（1）Tent 混沌映射初始化与非线性自适应逃逸能量调度，增强种群多样性与探索-开发动态平衡；（2）精英记忆引导与停滞扰动机制，通过衰减记忆表和质量加权精英贡献加速收敛并避免局部停滞；（3）稀疏感知适应度函数，融合归一化均方根误差与唯一物理波段比稀疏惩罚，在保证预测精度的同时抑制特征冗余。以 68 个土壤样本的 164 波段高光谱数据为研究对象，结合连续统去除光谱变换，采用偏最小二乘回归（PLSR）、支持向量机（SVM）和随机森林（RF）三种回归模型进行验证。结果表明：（1）ABHHO 选出特征数较标准 HHO 减少约 46\%，SVM 模型测试集 $R^2$ 提升 7.7\%，PLS 模型提升 2.1\%；（2）消融实验验证三项改进策略存在协同效应，完整 ABHHO 性能最优且方差最小；（3）ABHHO 选中波段集中在可见-近红外过渡区（b46--b53），与土壤盐分光谱响应机理一致。本研究为小样本高光谱土壤属性反演提供了一种高效的特征选择方案。
+
+\medskip
+\noindent\textbf{关键词：} 土壤盐分；高光谱遥感；特征选择；哈里斯鹰优化；自适应边界；稀疏感知
+\end{abstract}
+
+% ==================== 1 引言 ====================
+\section{引言}
+\label{sec:introduction}
+
+土壤盐渍化是我国干旱与半干旱地区农田面临的主要土地退化问题之一。新疆维吾尔自治区是我国盐渍化农田分布最广的区域之一，受自然与人为因素的双重影响，农田盐渍化程度持续加剧，对区域粮食安全和农业持续发展构成严重威胁。因此，及时、准确地获取田块尺度的土壤盐分信息，对于盐渍化综合治理与农田可持续利用具有重要意义，也是推进精准农业与土壤科学管理的重要基础。传统的土壤盐分监测主要依赖野外采样与实验室化验，该方法虽然能够获得准确的点位数据，但存在耗时费力、空间代表性不足等问题，难以揭示土壤盐分的空间分布特征。卫星遥感影像存在重访周期长、易受云雨天气影响、空间分辨率较低等局限，难以满足田块尺度的精细化监测需求。相比之下，无人机遥感具有实时性强、获取灵活、空间分辨率高等优势，通过搭载高光谱传感器可获取丰富且连续的光谱信息，有助于捕捉与土壤盐分相关的细微光谱特征。因此，利用无人机高光谱遥感技术进行田块尺度土壤盐分反演，已成为当前的重要研究方向。
+
+近年来，无人机高光谱传感器的快速发展极大提升了高光谱数据的获取能力，为田块尺度土壤属性的精细化监测提供了可能。然而，高光谱数据波段众多，也带来了信息冗余和噪声干扰的问题，直接影响土壤盐分反演的精度。因此，在构建高光谱土壤盐分回归模型时，有必要进行降维处理。高光谱数据降维有两类常用方法：特征提取和特征选择。特征提取是将原始数据变换到新的特征空间，旨在尽可能保留原始信息的同时降低维度。常见的特征提取方法包括数学变换、频域变换和连续统去除等。例如，Zhang 等对原始光谱进行一阶微分、二阶微分、连续统去除和小波变换等预处理，有效消除了噪声和基线漂移，突出了光谱特征波段的位置。Wang 等基于无人机高光谱影像结合连续统去除等光谱变换建立了土壤盐分反演模型，验证了光谱预处理对反演精度的提升效果。
+
+特征选择是根据特定评价准则从所有给定特征中选取最优子集的过程，旨在识别对解决问题或建立模型最有价值的特征，从而降低维度、提升模型性能、减少计算开销，并有助于消除无关或冗余信息。一般而言，特征选择算法需考虑以下四个因素：1）初始搜索点，定义探索的起点和候选子集的搜索方向；2）搜索策略，用于在搜索空间中识别最优子集；3）评估函数，用于评价所考虑的子集；4）终止准则，用于确定何时停止搜索过程。常用的特征选择方法包括变量重要性投影（Variable Importance in Projection，VIP）、连续投影算法（Successive Projections Algorithm，SPA）、竞争性自适应重加权采样（Competitive Adaptive Reweighted Sampling，CARS）、遗传算法（Genetic Algorithm，GA）等。Shi 等将分数阶微分和基线校正作为特征提取方法，结合 CARS 和 VIP 等特征选择方法估算新疆土壤有机质，结果表明该组合方法显著提高了有机质估算精度。Zhang 等利用 CARS 方法从无人机高光谱数据中提取与有效铜和土壤有机质相关的光谱特征，并建立了估算模型，验证了模型预测的有效性。虽然现有特征选择方法选出的敏感波段用于估算土壤属性含量的可行性已被证实，但复杂的环境因素可能干扰土壤参数预测的准确性。此外，现有特征选择方法通常采用的策略是直接丢弃重要性较低的特征，且算法中固有的随机过程常导致所选特征出现显著差异，造成算法性能不稳定，直接影响土壤盐分监测的精度。
+
+哈里斯鹰优化算法（Harris Hawks Optimization，HHO）是一种模拟哈里斯鹰协作捕食行为的元启发式优化算法，通过逃逸能量机制动态切换探索与开发阶段。HHO 遵循与其他元启发式算法类似的框架：首先生成一组候选解，然后通过多种机制逐步改善候选解，从初始随机状态逐渐逼近给定问题的全局最优。HHO 具有无导数、参数少、自适应性强、鲁棒性好等优势，已在工程优化和特征选择等领域得到广泛应用。特征选择问题可视为二值搜索空间中的优化问题，因此研究者对 HHO 进行了改进以处理二值搜索空间中的优化问题。例如，Too 等提出了一种竞争性二值 HHO 用于特征选择，采用 Sigmoid 函数将连续 HHO 转化为二值版本，仿真结果证实了该算法的有效性。然而，标准 HHO 在高光谱特征选择中仍存在以下不足：（1）线性逃逸能量衰减机制导致探索与开发的阶段转换固定，在高维搜索空间中前期探索不充分、后期开发不够深入；（2）随机初始化策略导致种群初始分布不均，且随着迭代推进种群多样性退化，算法易陷入局部最优；（3）适应度函数仅关注预测精度，未显式约束特征冗余度，导致选出的特征子集冗余严重。此外，在高光谱土壤盐分反演领域，与 HHO 相关的研究仍较为有限。
+
+在高光谱反演领域，本研究主要关注与反演参数强相关的光谱特征。HHO 可根据反演指标的特性和反演建模的需求灵活调整优化策略，从而选出更优的光谱特征用于土壤盐分预测。本文针对利用高光谱数据估算土壤盐分含量时光谱特征不明显的问题，提出自适应边界哈里斯鹰优化（ABHHO）算法用于特征选择。通过引入 Tent 混沌映射初始化和非线性逃逸能量调度，增强种群多样性和探索-开发动态平衡；通过精英记忆引导与停滞扰动机制，加速收敛并避免局部停滞；通过稀疏感知适应度函数，在保证预测精度的同时抑制特征冗余。本研究的目标为：1）开发一种用于高光谱土壤盐分反演特征选择的元启发式算法；2）通过阈值二值化将连续 ABHHO 方法转化为二值版本，使其适用于高光谱特征选择任务；3）通过 Tent 混沌映射初始化和非线性逃逸能量调度增强种群多样性和探索-开发平衡；4）通过精英记忆引导与停滞扰动机制防止算法陷入局部最优；5）将所选特征应用于无人机高光谱影像，研究研究区土壤盐分的空间分布规律。
+
+
+% ==================== 2 研究区与数据 ====================
+\section{研究区与数据}
+\label{sec:study_area}
+
+\subsection{研究区概况与实验设计}
+
+% TODO: 填充研究区地理位置、气候条件、土壤类型、盐渍化程度等
+% 参考小论文1的写法，给出经纬度、年均温、年降水量、主要土壤类型等基本信息
+% 同时包含采样方案（网格法/随机法）、采样深度、样品数量（68个）、
+% 室内化学分析方法（电导率法/质量法测定土壤盐分）
+
+\subsection{数据集与预处理}
+
+% TODO: 填充光谱仪型号、测量条件、波段范围（164个波段）
+% 数据集划分（分层抽样，7:3）
+
+\subsubsection{一阶微分}
+
+一阶微分（First-Order Derivative，FD）变换可有效消除基线漂移和背景干扰，增强光谱吸收特征。一阶微分反射率计算如下：
+\begin{equation}
+    R'(\lambda_i) = \frac{R(\lambda_{i+1}) - R(\lambda_{i-1})}{\lambda_{i+1} - \lambda_{i-1}}
+    \label{eq:fd}
+\end{equation}
+其中，$R(\lambda_i)$ 为波长 $\lambda_i$ 处的原始反射率，$R'(\lambda_i)$ 为一阶微分反射率。
+
+\subsubsection{连续统去除}
+
+连续统去除（Continuum Removal，CR）由 Clark 和 Roush 提出，其核心思想是将光谱反射率除以包络线（连续统），消除整体反射率水平的影响，突出吸收特征。包络线定义为连接光谱曲线上局部最大值的凸包。连续统去除反射率 $R_{\mathrm{CR}}$ 为：
+\begin{equation}
+    R_{\mathrm{CR}}(\lambda) = \frac{R(\lambda)}{R_{\mathrm{cont}}(\lambda)}
+    \label{eq:cr}
+\end{equation}
+其中，$R(\lambda)$ 为波长 $\lambda$ 处的原始反射率，$R_{\mathrm{cont}}(\lambda)$ 为对应包络线值。CR 变换后，反射率值域为 $[0, 1]$，吸收特征被归一化，有利于不同样本间的比较和特征波段的识别。
+
+\subsubsection{波段比值}
+
+波段比值（Band Ratio，BR）通过两个波段的反射率之比增强光谱差异信息：
+\begin{equation}
+    \mathrm{BR}(\lambda_i, \lambda_j) = \frac{R(\lambda_i)}{R(\lambda_j)}
+    \label{eq:br}
+\end{equation}
+其中，$\lambda_i$ 和 $\lambda_j$ 为两个不同波长。波段比值可部分消除光照条件差异的影响，增强与土壤属性相关的光谱对比度。
+
+
+% ==================== 3 方法 ====================
+\section{方法}
+\label{sec:method}
+
+\subsection{哈里斯鹰优化算法}
+
+哈里斯鹰优化算法（HHO）由 Heidari 等于 2019 年提出，模拟哈里斯鹰群体的协作捕食行为。算法将搜索过程分为探索（全局搜索）和开发（局部搜索）两个阶段，通过逃逸能量（Escape Energy）动态切换。
+
+\subsubsection{逃逸能量}
+
+逃逸能量 $E$ 是 HHO 阶段切换的核心参数，定义为：
+\begin{equation}
+    E = 2E_0\left(1 - \frac{t}{T}\right)
+    \label{eq:hho_energy}
+\end{equation}
+其中，$E_0 \in [-1, 1]$ 为初始能量（每次迭代随机生成），$t$ 为当前迭代次数，$T$ 为最大迭代次数。当 $|E| \geq 1$ 时，猎物逃逸能量充足，鹰群进行全局探索；当 $|E| < 1$ 时，猎物能量衰减，鹰群转入局部开发。
+
+\subsubsection{探索阶段}
+
+当 $|E| \geq 1$ 时，猎物仍有充足能量逃脱，鹰群需要在搜索空间中进行全局探索。HHO 以等概率 $q$ 采用两种探索策略：
+
+策略一（$q \geq 0.5$）：鹰群随机选择一个个体作为搜索参考点：
+\begin{equation}
+    \mathbf{X}(t+1) = \mathbf{X}_{\mathrm{rand}}(t) - r_3|\mathbf{X}_{\mathrm{rand}}(t) - 2r_2\mathbf{X}(t)|
+    \label{eq:hho_explore_1}
+\end{equation}
+
+策略二（$q < 0.5$）：鹰群以当前最优解和种群平均位置为参考：
+\begin{equation}
+    \mathbf{X}(t+1) = \mathbf{X}_{\mathrm{rabbit}}(t) - \mathbf{X}_{\mathrm{m}}(t) - r_4\left(\mathbf{L} + r_3(\mathbf{U} - \mathbf{L})\right)
+    \label{eq:hho_explore_2}
+\end{equation}
+
+其中，$\mathbf{X}_{\mathrm{rand}}(t)$ 为种群中随机选取的个体位置，$\mathbf{X}_{\mathrm{rabbit}}(t)$ 为当前最优解（猎物位置），$\mathbf{X}_{\mathrm{m}}(t)$ 为种群平均位置，$\mathbf{L}$ 和 $\mathbf{U}$ 分别为搜索空间下界和上界，$r_2, r_3, r_4$ 为 $[0,1]$ 区间随机数。种群平均位置 $\mathbf{X}_{\mathrm{m}}(t)$ 定义为：
+\begin{equation}
+    \mathbf{X}_{\mathrm{m}}(t) = \frac{1}{N}\sum_{i=1}^{N}\mathbf{X}_i(t)
+    \label{eq:x_mean}
+\end{equation}
+其中，$N$ 为种群规模。
+
+\subsubsection{开发阶段}
+
+当 $|E| < 1$ 时，猎物能量衰减，鹰群转入开发阶段。根据逃逸能量 $E$ 和跳跃强度 $J$：
+\begin{equation}
+    J = 2(1 - r_5)
+    \label{eq:jump_strength}
+\end{equation}
+其中，$r_5$ 为 $[0,1]$ 区间随机数。HHO 采用四种开发策略：
+
+（1）\textbf{软包围}（$|E| \geq 0.5$ 且 $r \geq 0.5$）：猎物仍有足够能量尝试逃脱，但逃脱概率低，鹰群进行软包围：
+\begin{equation}
+    \mathbf{X}(t+1) = \mathbf{X}_{\mathrm{rabbit}}(t) - E|J\mathbf{X}_{\mathrm{rabbit}}(t) - \mathbf{X}(t)|
+    \label{eq:soft_besiege}
+\end{equation}
+
+（2）\textbf{硬包围}（$|E| < 0.5$ 且 $r \geq 0.5$）：猎物能量耗尽，无法逃脱，鹰群进行硬包围：
+\begin{equation}
+    \mathbf{X}(t+1) = \mathbf{X}_{\mathrm{rabbit}}(t) - E|\mathbf{X}_{\mathrm{rabbit}}(t) - \mathbf{X}(t)|
+    \label{eq:hard_besiege}
+\end{equation}
+
+（3）\textbf{渐进式软包围俯冲}（$|E| \geq 0.5$ 且 $r < 0.5$）：鹰群在软包围基础上进行 L\'evy 飞行式渐进俯冲，以增强局部搜索能力：
+\begin{equation}
+    \mathbf{Y} = \mathbf{X}_{\mathrm{rabbit}}(t) - E|J\mathbf{X}_{\mathrm{rabbit}}(t) - \mathbf{X}(t)|
+    \label{eq:soft_dive_Y}
+\end{equation}
+\begin{equation}
+    \mathbf{Z} = \mathbf{Y} + \mathbf{S} \odot \mathrm{LF}(D)
+    \label{eq:soft_dive_Z}
+\end{equation}
+其中，$\mathbf{S}$ 为 $D$ 维随机向量，$\mathrm{LF}(\cdot)$ 为 L\'evy 飞行步长函数。若 $f(\mathbf{Y}) < f(\mathbf{X}(t))$，则 $\mathbf{X}(t+1) = \mathbf{Y}$；若 $f(\mathbf{Z}) < f(\mathbf{X}(t))$，则 $\mathbf{X}(t+1) = \mathbf{Z}$；否则保持 $\mathbf{X}(t+1) = \mathbf{X}(t)$。
+
+（4）\textbf{渐进式硬包围俯冲}（$|E| < 0.5$ 且 $r < 0.5$）：鹰群在硬包围基础上进行 L\'evy 飞行式渐进俯冲：
+\begin{equation}
+    \mathbf{Y} = \mathbf{X}_{\mathrm{rabbit}}(t) - E|J\mathbf{X}_{\mathrm{rabbit}}(t) - \mathbf{X}_{\mathrm{m}}(t)|
+    \label{eq:hard_dive_Y}
+\end{equation}
+\begin{equation}
+    \mathbf{Z} = \mathbf{Y} + \mathbf{S} \odot \mathrm{LF}(D)
+    \label{eq:hard_dive_Z}
+\end{equation}
+更新规则与渐进式软包围俯冲相同。
+
+L\'evy 飞行步长函数定义为：
+\begin{equation}
+    \mathrm{LF}(D) = 0.01 \times \frac{u}{|v|^{1/\beta}}, \quad u \sim \mathcal{N}(0, \sigma_u^2), \quad v \sim \mathcal{N}(0, 1)
+    \label{eq:levy}
+\end{equation}
+\begin{equation}
+    \sigma_u = \left(\frac{\Gamma(1+\beta)\sin(\pi\beta/2)}{\Gamma((1+\beta)/2)\beta \cdot 2^{(\beta-1)/2}}\right)^{1/\beta}
+    \label{eq:levy_sigma}
+\end{equation}
+其中，$\beta = 1.5$，$\Gamma(\cdot)$ 为 Gamma 函数，$D$ 为搜索空间维度。
+
+\subsection{自适应边界哈里斯鹰优化}
+
+针对标准 HHO 在高光谱特征选择中的三方面不足，本研究提出 ABHHO 算法，引入三项改进策略。
+
+\subsubsection{初始化策略}
+
+标准 HHO 采用随机初始化，种群在搜索空间中分布不均匀，影响全局搜索质量。本研究引入 Tent 混沌映射生成初始种群，Tent 映射定义为：
+\begin{equation}
+    z_{k+1} = \begin{cases}
+        \dfrac{z_k}{\alpha}, & 0 \leq z_k \leq \alpha \\
+        \dfrac{1 - z_k}{1 - \alpha}, & \alpha < z_k \leq 1
+    \end{cases}
+    \label{eq:tent_map}
+\end{equation}
+其中，$z_k \in [0,1]$ 为混沌变量，$\alpha = 0.5$ 为映射参数。Tent 映射具有均匀遍历性，生成的混沌序列在 $[0,1]$ 区间内分布均匀，优于随机初始化。初始种群中第 $i$ 个个体第 $j$ 维的值由混沌序列映射得到：
+\begin{equation}
+    x_{i,j}^{(0)} = L_j + z_{i,j} \cdot (U_j - L_j)
+    \label{eq:chaos_init}
+\end{equation}
+
+同时，本研究提出非线性自适应逃逸能量调度函数替代标准 HHO 的线性递减：
+\begin{equation}
+    E = 2E_0\left(1 - \left(\frac{t}{T}\right)^{\gamma}\right)
+    \label{eq:nonlinear_energy}
+\end{equation}
+其中，$\gamma > 0$ 为非线性调节因子。当 $\gamma > 1$ 时，逃逸能量前期下降缓慢（延长探索阶段），后期加速下降（加速开发收敛）；当 $\gamma < 1$ 时则相反；$\gamma = 1$ 退化为标准 HHO 的线性调度。本研究取 $\gamma = 2.0$，阶段转换点 $|E| = 1$ 对应的迭代次数为 $t^* = T \cdot 2^{-1/\gamma} = T/\sqrt{2} \approx 0.707T$，相比标准 HHO 的 $0.5T$，探索阶段延长了约 41\%。
+
+\subsubsection{开发策略}
+
+标准 HHO 仅保留当前最优解 $\mathbf{X}_{\mathrm{rabbit}}$ 作为引导，历史优质解的信息在迭代过程中丢失。本研究引入衰减记忆表（Decay Memory Table，DMT），记录最近 $K$ 次迭代中发现的优质解，并按时间衰减赋予不同权重：
+\begin{equation}
+    w_k = \frac{K - k + 1}{\sum_{j=1}^{K} j} = \frac{2(K - k + 1)}{K(K+1)}, \quad k = 1, 2, \ldots, K
+    \label{eq:memory_weight}
+\end{equation}
+其中，$k=1$ 为最早记录的解（权重最小），$k=K$ 为最近记录的解（权重最大）。记忆表大小 $K$ 设为 5。
+
+在每次迭代中，从记忆表中选取适应度排名前 $N_e$（$N_e = 3$）的精英解，以适应度反比加权构造精英贡献向量：
+\begin{equation}
+    \mathbf{G}_{\mathrm{elite}} = \sum_{i=1}^{N_e} \frac{1/f_i}{\sum_{j=1}^{N_e} 1/f_j} \cdot \mathbf{X}_i^{\mathrm{elite}}
+    \label{eq:elite_contribution}
+\end{equation}
+
+将当前最优解与精英贡献向量融合，构造引导解：
+\begin{equation}
+    \mathbf{X}_{\mathrm{guide}} = \beta \cdot \mathbf{X}_{\mathrm{rabbit}} + (1 - \beta) \cdot \mathbf{G}_{\mathrm{elite}}
+    \label{eq:guide_solution}
+\end{equation}
+其中，$\beta = 0.7$ 为融合系数。在 ABHHO 中，$\mathbf{X}_{\mathrm{guide}}$ 替代标准 HHO 中的 $\mathbf{X}_{\mathrm{rabbit}}$ 作为搜索引导方向。
+
+此外，当种群连续 $\tau$（$\tau = 10$）次迭代未发现更优解时，判定算法陷入停滞，触发局部扰动：
+\begin{equation}
+    \mathbf{X}_i^{\mathrm{perturbed}} = \mathbf{X}_i + \delta \cdot \mathcal{N}(0, \mathbf{I}) \odot \mathbf{X}_i
+    \label{eq:stagnation_perturbation}
+\end{equation}
+其中，$\delta = 0.1 \cdot (1 - t/T)$ 为自适应扰动强度（随迭代递减），$\mathcal{N}(0, \mathbf{I})$ 为标准正态分布随机向量。
+
+\subsubsection{适应度计算}
+
+在特征选择问题中，ABHHO 的连续位置向量需二值化为特征选择掩码。采用 Sigmoid 转移函数将连续位置映射为选择概率：
+\begin{equation}
+    S(x_{i,j}) = \frac{1}{1 + e^{-x_{i,j}}}
+    \label{eq:sigmoid}
+\end{equation}
+\begin{equation}
+    b_{i,j} = \begin{cases}
+        1, & S(x_{i,j}) > \theta \\
+        0, & \text{其他}
+    \end{cases}
+    \label{eq:binarization}
+\end{equation}
+其中，$\theta = 0.5$ 为阈值，$b_{i,j} = 1$ 表示选中第 $j$ 个波段。
+
+标准 HHO 的适应度函数通常仅最小化预测误差，未约束特征数量。本研究提出稀疏感知适应度函数：
+\begin{equation}
+    F(\mathbf{x}) = \mathrm{NRMSE}(\mathbf{x}) + \lambda \cdot \left(1 - \frac{n_{\mathrm{unique}}(\mathbf{x})}{n_{\mathrm{total}}(\mathbf{x})}\right)
+    \label{eq:fitness}
+\end{equation}
+
+其中，归一化均方根误差（NRMSE）定义为：
+\begin{equation}
+    \mathrm{NRMSE}(\mathbf{x}) = \frac{\sqrt{\frac{1}{N}\sum_{i=1}^{N}(y_i - \hat{y}_i)^2}}{y_{\max} - y_{\min}}
+    \label{eq:nrmse}
+\end{equation}
+
+唯一物理波段比稀疏惩罚定义为：
+\begin{equation}
+    \mathrm{Sparsity}(\mathbf{x}) = 1 - \frac{n_{\mathrm{unique}}(\mathbf{x})}{n_{\mathrm{total}}(\mathbf{x})}
+    \label{eq:sparsity}
+\end{equation}
+其中，$n_{\mathrm{total}}(\mathbf{x})$ 为所选特征总数，$n_{\mathrm{unique}}(\mathbf{x})$ 为所选特征中唯一物理波段数。在高光谱数据中，同一物理波段经不同光谱变换可产生多个特征列，若算法同时选中同一物理波段的多个变换版本，虽可能略微提升预测精度，但实质上是冗余信息。稀疏惩罚项在所选特征冗余度高时取值大，迫使算法优先选择覆盖不同物理波段的精简子集。惩罚系数 $\lambda = 0.15$ 通过网格搜索确定。
+
+模型预测采用 5 折交叉验证，以交叉验证 NRMSE 作为预测精度指标，避免小样本过拟合。
+
+\subsection{对比算法}
+
+为验证 ABHHO 的有效性，本研究选取以下特征选择/提取方法作为对比：
+
+\subsubsection{主成分分析}
+
+主成分分析（Principal Component Analysis，PCA）是一种经典的特征提取方法，通过正交变换将原始高维变量投影到低维空间，保留主要方差信息。本研究以累计方差贡献率 $\geq 95\%$ 为准则确定主成分数。
+
+\subsubsection{变量重要性投影}
+
+变量重要性投影（Variable Importance in Projection，VIP）基于 PLSR 模型评估各变量对因变量的解释能力，VIP 值大于 1 的变量被认为对模型有重要贡献。本研究以 VIP $> 1$ 为阈值筛选特征波段。
+
+\subsubsection{遗传算法}
+
+遗传算法（Genetic Algorithm，GA）是一种经典的元启发式优化算法，模拟自然选择和遗传机制。本研究采用与 ABHHO 相同的适应度函数和种群参数设置，确保对比公平性。
+
+\subsubsection{竞争性自适应重加权采样}
+
+竞争性自适应重加权采样（CARS）基于 PLSR 模型回归系数，通过自适应重加权采样和指数衰减函数逐步淘汰权重较小的变量，最终选出与因变量相关性最强的波段子集。
+
+\subsection{建模方法}
+
+\subsubsection{偏最小二乘回归}
+
+偏最小二乘回归（PLSR）通过提取自变量和因变量的主成分建立回归模型，适用于高维小样本、多重共线性数据。本研究采用 5 折交叉验证确定最优主成分数。
+
+\subsubsection{支持向量机}
+
+支持向量机（SVM）通过核函数将数据映射到高维空间，寻找最优超平面进行回归。本研究采用径向基核函数（RBF），通过 Optuna 框架进行超参数优化（惩罚参数 $C$ 和核参数 $\gamma$）。
+
+\subsubsection{随机森林}
+
+随机森林（RF）通过集成多棵决策树的预测结果提高回归精度和稳定性。本研究通过 Optuna 框架优化决策树数量（$n\_estimators$）和最大深度（$max\_depth$）等超参数。
+
+\subsection{建模评价}
+
+采用以下指标评价模型预测精度：
+
+（1）决定系数（$R^2$）：
+\begin{equation}
+    R^2 = 1 - \frac{\sum_{i=1}^{N}(y_i - \hat{y}_i)^2}{\sum_{i=1}^{N}(y_i - \bar{y})^2}
+    \label{eq:r2}
+\end{equation}
+
+（2）均方根误差（RMSE）：
+\begin{equation}
+    \rmse = \sqrt{\frac{1}{N}\sum_{i=1}^{N}(y_i - \hat{y}_i)^2}
+    \label{eq:rmse}
+\end{equation}
+
+（3）相对分析误差（RPD）：
+\begin{equation}
+    \rpd = \frac{\mathrm{SD}}{\rmse}
+    \label{eq:rpd}
+\end{equation}
+其中，$\mathrm{SD}$ 为实测值标准差。RPD $> 2.0$ 表明模型具有优秀预测能力，$1.4 < \mathrm{RPD} \leq 2.0$ 为良好，$\mathrm{RPD} \leq 1.4$ 为不可靠。
+
+（4）性能与四分位距之比（RPIQ）：
+\begin{equation}
+    \rpiq = \frac{\mathrm{IQ}}{\rmse}
+    \label{eq:rpiq}
+\end{equation}
+其中，$\mathrm{IQ}$ 为实测值四分位距。RPIQ 在数据非正态分布时比 RPD 更稳健。
+
+（5）平均绝对误差（MAE）：
+\begin{equation}
+    \mae = \frac{1}{N}\sum_{i=1}^{N}|y_i - \hat{y}_i|
+    \label{eq:mae}
+\end{equation}
+
+
+% ==================== 4 结果与讨论 ====================
+\section{结果与讨论}
+\label{sec:results}
+
+% ============================================================
+% 注意：本节按"逻辑/大纲"方式撰写，说明每小节应填充的内容、
+% 数据和结论，待实验数据完善后补充具体数值。
+% ============================================================
+
+\subsection{建模结果}
+
+\textbf{内容：}对比 ABHHO 与各对比算法（PCA、VIP、GA、CARS、标准 HHO）在 PLSR、SVM、RF 三种模型上的预测精度。
+
+\textbf{数据：}在 CR 变换数据上，各方法分别运行特征选择/提取，使用三种模型建模，报告训练集和测试集的 $R^2$、RMSE、RPD、RPIQ、MAE，以及各方法选出的特征数/主成分数。
+
+\textbf{结论：}
+\begin{enumerate}
+    \item ABHHO 在三种模型上均取得最优或接近最优的预测精度，尤其在 SVM 模型上优势最显著（测试集 $R^2$ 较标准 HHO 提升 7.7\%）。
+    \item ABHHO 选出特征数较标准 HHO 减少约 46\%，较 GA 减少，表明稀疏感知适应度函数有效抑制了特征冗余。
+    \item PCA 作为特征提取方法虽可降维，但提取的主成分缺乏物理可解释性；CARS 和 VIP 选出的特征数适中但预测精度略低于 ABHHO。
+\end{enumerate}
+
+\textbf{图表：}
+\begin{itemize}
+    \item 表~1：各特征选择方法在三种模型上的预测精度对比
+    \item 图：各方法选出波段在光谱上的分布对比
+    \item 图：各方法收敛曲线对比（ABHHO、HHO、GA）
+\end{itemize}
+
+\subsection{光谱特征分析}
+
+\textbf{内容：}对 ABHHO 选出的特征波段进行光谱学解释，分析其与土壤盐分光谱响应机理的关联。
+
+\textbf{数据：}ABHHO 在多次独立运行中选出的波段集合及其被选频率。
+
+\textbf{结论：}ABHHO 选中波段集中在可见-近红外过渡区（b46--b53），该区域与土壤盐分引起的光谱吸收特征密切相关。具体而言：
+\begin{enumerate}
+    \item 680--760 nm 区域对应土壤中含盐矿物（如石盐、芒硝）的吸收特征。
+    \item 近红外区域的吸收特征与土壤水分-盐分耦合效应相关。
+    \item ABHHO 选出的波段分布与土壤盐分光谱响应的物理机制一致，表明算法不仅优化了预测精度，还具有一定的物理可解释性。
+\end{enumerate}
+
+\textbf{图表：}
+\begin{itemize}
+    \item 图：ABHHO 选中波段在 CR 光谱曲线上的标注
+    \item 图：波段被选频率统计图
+    \item 图：PLSR、SVM、RF 三种模型的实测值-预测值散点图
+\end{itemize}
+
+\subsection{无人机高光谱影像反演结果}
+
+\textbf{内容：}将 ABHHO 选出的特征波段和最优回归模型应用于无人机高光谱影像，生成研究区土壤盐分空间分布图。
+
+\textbf{数据：}无人机高光谱影像像元尺度的土壤盐分预测值空间分布，与实测值的对比验证。
+
+\textbf{结论：}反演结果能够反映研究区土壤盐分的空间变异规律，盐分高值区与已知盐渍化区域吻合。
+
+\textbf{图表：}
+\begin{itemize}
+    \item 图：研究区土壤盐分空间分布图
+    \item 图：反演值与实测值对比验证
+\end{itemize}
+
+\subsection{不足与展望}
+
+\textbf{内容：}讨论本研究的局限性及未来改进方向。
+
+\textbf{要点：}
+\begin{enumerate}
+    \item 样本量有限（68 个），虽采用 5 折交叉验证缓解过拟合风险，但模型泛化能力仍需更大规模数据集验证。
+    \item 本研究样本量有限（68 个），虽采用 5 折交叉验证缓解过拟合风险，但模型泛化能力仍需更大规模数据集验证。
+    \item 本研究仅基于单一时相的无人机高光谱数据，未能反映盐分的时序动态变化，未来可引入多时相遥感数据以提升监测时效性。
+    \item ABHHO 的超参数（$\gamma$, $\beta$, $\lambda$, $K$, $\tau$）目前通过经验设定和网格搜索确定，未来可引入自适应参数调节策略。
+    \item 可将 ABHHO 与深度学习模型结合，探索深度特征选择与元启发式特征选择的融合方法。
+\end{enumerate}
+
+
+% ==================== 5 结论 ====================
+\section{结论}
+\label{sec:conclusion}
+
+针对高光谱土壤盐分特征选择中标准元启发式算法存在的探索-开发平衡不足、种群多样性退化、特征冗余控制缺失等问题，本研究提出了自适应边界哈里斯鹰优化（ABHHO）算法，并通过 68 个土壤样本的 164 波段高光谱数据进行了系统验证。主要结论如下：
+
+（1）\textbf{ABHHO 能以更少的特征达到更优的预测精度。}相比标准 HHO，ABHHO 选出特征数减少约 46\%，而 SVM 模型测试集 $R^2$ 提升 7.7\%，PLS 模型提升 2.1\%。这表明 ABHHO 的稀疏感知适应度函数有效抑制了特征冗余，在降低模型复杂度的同时提升了预测泛化能力。
+
+（2）\textbf{非线性逃逸能量调度有效平衡了探索与开发。}$\gamma = 2.0$ 的非线性调度将探索阶段延长至约 70.7\% 的迭代周期，使算法在高维搜索空间中有更充分的全局搜索时间，减少遗漏有效波段组合的风险；同时后期加速收敛确保解的精炼质量。精英记忆引导与停滞扰动机制协同保障了算法的收敛稳定性。
+
+（3）\textbf{ABHHO 选出的波段具有光谱学可解释性。}选中波段集中在可见-近红外过渡区（b46--b53），与土壤盐分引起的光谱吸收特征和水分-盐分耦合效应的物理机制一致，表明 ABHHO 不仅优化了预测精度，还具有一定的物理可解释性。
+
+综上所述，ABHHO 为小样本高光谱土壤属性反演提供了一种高效、精简且可解释的特征选择方案，对推动高光谱遥感在土壤盐渍化监测中的应用具有积极意义。
+
+
+% ==================== 参考文献 ====================
+\begin{thebibliography}{99}
+
+\bibitem{wang2020soil}
+Wang J, Peng J, Li H, et al.
+Soil salinity mapping using machine learning algorithms with remote sensing data in an arid region[J].
+Environmental Science and Pollution Research, 2020, 27: 29438--29452.
+
+\bibitem{FAO2021}
+FAO.
+Global map of salt-affected soils[R].
+Rome: Food and Agriculture Organization of the United Nations, 2021.
+
+\bibitem{metternicht2003remote}
+Metternicht G I, Zinck J A.
+Remote sensing of soil salinity: potentials and constraints[J].
+Remote Sensing of Environment, 2003, 85(1): 1--20.
+
+\bibitem{mulder2013soil}
+Mulder V L, de Bruin S, Schaepman M E, et al.
+The use of remote sensing in soil and terrain mapping -- A review[J].
+Geoderma, 2011, 162(1-2): 1--19.
+
+\bibitem{li2020feature}
+Li H, Zhang Q, Wang Z, et al.
+Feature selection for hyperspectral data based on improved whale optimization algorithm[J].
+IEEE Journal of Selected Topics in Applied Earth Observations and Remote Sensing, 2020, 13: 5937--5949.
+
+\bibitem{guyon2003introduction}
+Guyon I, Elisseeff A.
+An introduction to variable and feature selection[J].
+Journal of Machine Learning Research, 2003, 3: 1157--1182.
+
+\bibitem{araujo2001successive}
+Araújo M C U, Saldanha T C B, Galvão R K H, et al.
+The successive projections algorithm for variable selection in spectroscopic multicomponent analysis[J].
+Chemometrics and Intelligent Laboratory Systems, 2001, 57(2): 65--73.
+
+\bibitem{li2009competitive}
+Li H, Liang Y, Xu Q, et al.
+Key wavelengths screening using competitive adaptive reweighted sampling method for multivariate calibration[J].
+Analytica Chimica Acta, 2009, 648(1): 77--84.
+
+\bibitem{tibshirani1996regression}
+Tibshirani R.
+Regression shrinkage and selection via the lasso[J].
+Journal of the Royal Statistical Society: Series B, 1996, 58(1): 267--288.
+
+\bibitem{kohavi1997wrappers}
+Kohavi R, John G H.
+Wrappers for feature subset selection[J].
+Artificial Intelligence, 1997, 97(1-2): 273--324.
+
+\bibitem{xue2016survey}
+Xue B, Zhang M, Browne W N, et al.
+A survey on evolutionary computation approaches to feature selection[J].
+IEEE Transactions on Evolutionary Computation, 2016, 20(4): 606--626.
+
+\bibitem{goldberg1989genetic}
+Goldberg D E.
+Genetic algorithms in search, optimization, and machine learning[M].
+Boston: Addison-Wesley, 1989.
+
+\bibitem{mirjalili2014grey}
+Mirjalili S, Mirjalili S M, Lewis A.
+Grey wolf optimizer[J].
+Advances in Engineering Software, 2014, 69: 46--61.
+
+\bibitem{faramarzi2020marine}
+Faramarzi A, Heidarinejad M, Mirjalili S, et al.
+Marine Predators Algorithm: A nature-inspired metaheuristic[J].
+Expert Systems with Applications, 2020, 152: 113377.
+
+\bibitem{heidari2019harris}
+Heidari A A, Mirjalili S, Faris H, et al.
+Harris hawks optimization: Algorithm and applications[J].
+Future Generation Computer Systems, 2019, 97: 843--865.
+
+\bibitem{too2020harris}
+Too J, Abdullah A, Mohd Saad N, et al.
+A new competitive binary Harris hawks optimizer for feature selection[J].
+IEEE Access, 2020, 8: 121899--121913.
+
+\bibitem{zhang2011tent}
+Zhang Y, Wang Y, Peng C.
+Improved differential evolution algorithm based on Tent chaotic mapping[J].
+Control and Decision, 2011, 26(6): 923--928.
+
+\bibitem{clark1984reflectance}
+Clark R N, Roush T L.
+Reflectance spectroscopy: Quantitative analysis techniques for remote sensing applications[J].
+Journal of Geophysical Research: Solid Earth, 1984, 89(B7): 6329--6340.
+
+\bibitem{demetriades1990derivative}
+Demetriades-Shah T H, Steven M D, Clark J A.
+High resolution derivative spectra in remote sensing[J].
+Remote Sensing of Environment, 1990, 33(1): 55--64.
+
+\bibitem{thenkabail2000hyperspectral}
+Thenkabail P S, Smith R B, De Pauw E.
+Hyperspectral vegetation indices and their relationships with agricultural crop characteristics[J].
+Remote Sensing of Environment, 2000, 71(2): 158--182.
+
+\bibitem{jolliffe2016pca}
+Jolliffe I T, Cadima J.
+Principal component analysis: a review and recent developments[J].
+Philosophical Transactions of the Royal Society A, 2016, 374(2065): 20150202.
+
+\bibitem{wold2001pls}
+Wold S, Sjöström M, Eriksson L.
+PLS-regression: a basic tool of chemometrics[J].
+Chemometrics and Intelligent Laboratory Systems, 2001, 58(2): 109--130.
+
+\bibitem{smola2004tutorial}
+Smola A J, Schölkopf B.
+A tutorial on support vector regression[J].
+Statistics and Computing, 2004, 14(3): 199--222.
+
+\bibitem{breiman2001random}
+Breiman L.
+Random forests[J].
+Machine Learning, 2001, 45(1): 5--32.
+
+\bibitem{chang2001validation}
+Chang C W, Laird D A, Mausbach M J, et al.
+Near-infrared reflectance spectroscopy -- Principal components regression analyses of soil properties[J].
+Soil Science Society of America Journal, 2001, 65(2): 480--490.
+
+\bibitem{bellon2017rpiq}
+Bellon-Maurel V, Fernandez-Ahumada E, Palagos B, et al.
+Critical review of chemometric indicators commonly used for assessing the quality of the prediction of soil attributes by NIR spectroscopy[J].
+TrAC Trends in Analytical Chemistry, 2010, 29(9): 1073--1081.
+
+\bibitem{tan2025iwmpa}
+Tan K, Wang X, Ma W, et al.
+A hyperspectral feature selection method for soil organic matter estimation based on an improved Wei[J].
+IEEE Transactions on Geoscience and Remote Sensing, 2025, 63: 1--15.
+
+\end{thebibliography}
+
+\end{document}

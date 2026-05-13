@@ -105,7 +105,7 @@ class ABHHOSelector(BaseFeatureSelector):
         #   - lambda=0.15：稀疏惩罚权重，20-30个波段惩罚很小，
         #     50+波段惩罚明显，算法自然倾向"少而精"
         # ------------------------------------------------------------------
-        LAMBDA_SPARSE = 0.15
+        LAMBDA_SPARSE = 0.03
         feat_cols = self.feat_cols
         n_unique_max = len({c.split("_", 1)[1] if "_" in c else c for c in feat_cols})
 

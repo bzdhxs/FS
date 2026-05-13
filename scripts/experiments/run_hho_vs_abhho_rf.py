@@ -57,7 +57,7 @@ EPOCH    = 200
 POP_SIZE = 50
 N_RUNS   = 30
 
-LAMBDA_SPARSE = 0.15
+LAMBDA_SPARSE = 0.03
 N_UNIQUE_MAX  = 150  # 总物理波段数 b14-b163
 
 ALGOS = ["HHO", "ABHHO"]
@@ -245,8 +245,8 @@ def run_once(algo, X_train, y_train, X_test, y_test, feat_cols,
         f"  [{algo:6s}] run {run_id:2d} | "
         f"bands={n_unique:3d}(fod04={n_fod04} fod16={n_fod16} cr={n_cr} cols={n_feat}) | "
         f"fitness={best_fitness:.4f} | "
-        f"Train R²={train_r2:.4f} RMSE={train_rmse:.4f} | "
-        f"Test  R²={test_r2:.4f} RMSE={test_rmse:.4f}"
+        f"Train R2={train_r2:.4f} RMSE={train_rmse:.4f} | "
+        f"Test  R2={test_r2:.4f} RMSE={test_rmse:.4f}"
     )
 
     return {
@@ -380,10 +380,10 @@ def main():
     # ── Wilcoxon 检验 ─────────────────────────────────────────────────────
     hho_r2   = df[df["algo"] == "HHO"]["test_r2"].values
     abhho_r2 = df[df["algo"] == "ABHHO"]["test_r2"].values
-    if len(hho_r2) >= 5 and len(abhho_r2) >= 5:
-        n = min(len(hho_r2), len(abhho_r2))
+    n_min = min(len(hho_r2), len(abhho_r2))
+    if n_min >= 5:
         try:
-            stat, p = wilcoxon(hho_r2[:n], abhho_r2[:n])
+            stat, p = wilcoxon(hho_r2[:n_min], abhho_r2[:n_min])
         except Exception:
             stat, p = np.nan, np.nan
         wilcoxon_result = {
@@ -392,12 +392,12 @@ def main():
             "significant": p < 0.05 if not np.isnan(p) else False,
         }
         pd.DataFrame([wilcoxon_result]).to_csv(out_dir / "wilcoxon.csv", index=False)
-        logger.info(f"\nWilcoxon 检验：stat={stat:.4f}, p={p:.4f}, "
-                    f"显著={p < 0.05 if not np.isnan(p) else 'N/A'}")
+        logger.info(f"\nWilcoxon test: stat={stat:.4f}, p={p:.4f}, "
+                    f"significant={'Yes' if not np.isnan(p) and p < 0.05 else 'No'}")
 
     # ── Cohen's d ──────────────────────────────────────────────────────────
-    if len(hho_r2) >= 2 and len(abhho_r2) >= 2:
-        diff = abhho_r2[:n] - hho_r2[:n]
+    if n_min >= 2:
+        diff = abhho_r2[:n_min] - hho_r2[:n_min]
         d = np.mean(diff) / (np.std(diff, ddof=1) + 1e-10)
         logger.info(f"Cohen's d = {d:.3f}")
 
@@ -421,15 +421,15 @@ def main():
     logger.info("\n" + "=" * 80)
     logger.info("汇总结果")
     logger.info("=" * 80)
-    logger.info(f"{'algo':<8} {'Test R²(mean±std)':<22} {'Test RMSE(mean)':<18} "
-                f"{'n_bands(mean±std)':<20} {'fod04/fod16/cr'}")
+    logger.info(f"{'algo':<8} {'Test R2(mean+std)':<22} {'Test RMSE(mean)':<18} "
+                f"{'n_bands(mean+std)':<20} {'fod04/fod16/cr'}")
     logger.info("-" * 80)
     for r in summary_rows:
         logger.info(
             f"{r['algo']:<8} "
-            f"{r['test_r2_mean']:.4f}±{r['test_r2_std']:.4f}        "
+            f"{r['test_r2_mean']:.4f}+{r['test_r2_std']:.4f}        "
             f"{r['test_rmse_mean']:<18.4f}"
-            f"{r['n_bands_mean']:.1f}±{r['n_bands_std']:.1f}          "
+            f"{r['n_bands_mean']:.1f}+{r['n_bands_std']:.1f}          "
             f"{r['n_fod04_mean']:.1f}/{r['n_fod16_mean']:.1f}/{r['n_cr_mean']:.1f}"
         )
 

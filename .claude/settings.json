@@ -9,10 +9,15 @@
       "Bash(taskkill //PID 85032 //F)",
       "Bash(taskkill //PID 87652 //F)",
       "Bash(taskkill //PID 39152 //F)",
-      "Bash(taskkill //PID 22700 //F)"
+      "Bash(taskkill //PID 22700 //F)",
+      "Bash(Get-ChildItem -Path \"d:\\\\_code\\\\FS\\\\log\" -Recurse)",
+      "Bash(Select-Object FullName, Length)",
+      "Bash(Get-ChildItem -Path \"d:\\\\_code\\\\FS\\\\resource\" -Recurse)",
+      "Bash(mkdir -p \"D:/_code/FS/paper\")"
     ],
     "additionalDirectories": [
-      "c:\\_code\\FS\\scripts\\experiments"
+      "c:\\_code\\FS\\scripts\\experiments",
+      "D:\\_code\\FS\\paper"
     ]
   }
 }
