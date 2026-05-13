@@ -3,7 +3,7 @@
 三个改进点：
   改进一（搜索机制）：Tent 混沌初始化 + 非线性逃逸能量调度
   改进二（精英记忆）：衰减记忆表 + 质量加权 + 融合引导 + 停滞触发局部扰动
-  改进三（评价机制）：归一化 RMSE + 特征比例的线性加权适应度函数
+  改进三（评价机制）：NRMSE + 唯一物理波段比例稀疏惩罚
 """
 
 import numpy as np
@@ -31,12 +31,10 @@ class ABHHOSelector(BaseFeatureSelector):
 
     改进一：Tent 混沌初始化 + 非线性逃逸能量（improve/ABHHO.py）
     改进二：精英记忆引导 + 停滞触发局部扰动（improve/ABHHO.py）
-    改进三：归一化 RMSE + 特征比例线性加权适应度（选择器层）
+    改进三：NRMSE + 唯一物理波段比例稀疏惩罚（选择器层）
 
     Parameters
     ----------
-    a : float, default=0.9
-        适应度函数精度项权重
     gamma : float, default=2.0
         非线性逃逸能量调节参数
     rho : float, default=0.95
@@ -60,7 +58,6 @@ class ABHHOSelector(BaseFeatureSelector):
         super().__init__(target_col, band_range, logger)
         self.epoch    = kwargs.get('epoch',    self.default_epoch)
         self.pop_size = kwargs.get('pop_size', self.default_pop_size)
-        self.a        = kwargs.get('a',        0.9)
         self.gamma    = kwargs.get('gamma',    2.0)
         # 改进二参数
         self.rho                 = kwargs.get('rho',                 0.95)
@@ -73,7 +70,6 @@ class ABHHOSelector(BaseFeatureSelector):
         self.enable_chaos_init       = kwargs.get('enable_chaos_init',       True)
         self.enable_nonlinear_energy = kwargs.get('enable_nonlinear_energy', True)
         self.enable_elite_memory     = kwargs.get('enable_elite_memory',     True)
-        self.enable_nrmse_fitness    = kwargs.get('enable_nrmse_fitness',    True)
 
     # ------------------------------------------------------------------
     # 主流程
@@ -83,7 +79,7 @@ class ABHHOSelector(BaseFeatureSelector):
         self.logger.info(f"Loading data from: {input_path}")
         self.logger.info(
             f"Parameters: Epoch={self.epoch}, Pop={self.pop_size}, "
-            f"a={self.a}, gamma={self.gamma}, rho={self.rho}, "
+            f"gamma={self.gamma}, rho={self.rho}, "
             f"tau={self.tau}, beta={self.beta}, delta={self.delta}"
         )
 
@@ -103,28 +99,19 @@ class ABHHOSelector(BaseFeatureSelector):
 
         # ------------------------------------------------------------------
         # 改进三：适应度函数
-        # Fitness = 0.7 * (RMSE / y_std) + soft_penalty
-        # soft_penalty 基于唯一物理波段数，区间 [30, 40]
+        # Fitness = RMSE_cv / y_std + lambda * |S_unique| / D_unique
+        #   - RMSE_cv / y_std：PLSR 5-fold CV 归一化 RMSE（快速代理评估）
+        #   - |S_unique| / D_unique：唯一物理波段占比（稀疏惩罚）
+        #   - lambda=0.15：稀疏惩罚权重，20-30个波段惩罚很小，
+        #     50+波段惩罚明显，算法自然倾向"少而精"
         # ------------------------------------------------------------------
-        SOFT_LOW  = 30
-        SOFT_HIGH = 40
-        W_RMSE    = 0.7
+        LAMBDA_SPARSE = 0.15
         feat_cols = self.feat_cols
         n_unique_max = len({c.split("_", 1)[1] if "_" in c else c for c in feat_cols})
 
         def _count_unique(sel_idx):
             return len({feat_cols[i].split("_", 1)[1] if "_" in feat_cols[i]
                         else feat_cols[i] for i in sel_idx})
-
-        def soft_penalty(sel_idx):
-            n_u = _count_unique(sel_idx)
-            if n_u < SOFT_LOW:
-                return (1 - W_RMSE) * (SOFT_LOW - n_u) / SOFT_LOW
-            if n_u > SOFT_HIGH:
-                return (1 - W_RMSE) * (n_u - SOFT_HIGH) / n_unique_max
-            return 0.0
-
-        enable_nrmse = self.enable_nrmse_fitness
 
         def fitness_function(solution):
             sel_idx = np.where(solution > 0.5)[0]
@@ -148,19 +135,8 @@ class ABHHOSelector(BaseFeatureSelector):
                     rmse_scores.append(np.sqrt(mean_squared_error(y_val, y_pred)))
 
                 rmse = np.mean(rmse_scores)
-
-                if enable_nrmse:
-                    fitness = W_RMSE * (rmse / y_std) + soft_penalty(sel_idx)
-                else:
-                    # 消融退化：(1-R²) + 0.2*ratio
-                    from sklearn.metrics import r2_score
-                    r2_list = []
-                    for train_idx, val_idx in kf.split(X):
-                        m = PLSRegression(n_components=n_comp)
-                        m.fit(X[train_idx][:, sel_idx], y[train_idx])
-                        r2_list.append(r2_score(
-                            y[val_idx], m.predict(X[val_idx][:, sel_idx]).flatten()))
-                    fitness = (1 - np.mean(r2_list)) + 0.2 * _count_unique(sel_idx) / n_unique_max
+                n_unique = _count_unique(sel_idx)
+                fitness = (rmse / y_std) + LAMBDA_SPARSE * (n_unique / n_unique_max)
                 return fitness
             except Exception:
                 return FITNESS_PENALTY_DEFAULT
@@ -220,7 +196,6 @@ class ABHHO_I1_Selector(ABHHOSelector):
         kwargs.setdefault('enable_chaos_init',       True)
         kwargs.setdefault('enable_nonlinear_energy', True)
         kwargs.setdefault('enable_elite_memory',     False)
-        kwargs.setdefault('enable_nrmse_fitness',    False)
         super().__init__(target_col, band_range, logger, **kwargs)
 
 
@@ -231,16 +206,14 @@ class ABHHO_I2_Selector(ABHHOSelector):
         kwargs.setdefault('enable_chaos_init',       False)
         kwargs.setdefault('enable_nonlinear_energy', False)
         kwargs.setdefault('enable_elite_memory',     True)
-        kwargs.setdefault('enable_nrmse_fitness',    False)
         super().__init__(target_col, band_range, logger, **kwargs)
 
 
 @register_algorithm("ABHHO_I3")
 class ABHHO_I3_Selector(ABHHOSelector):
-    """消融变体：仅改进三（NRMSE 适应度）。"""
+    """消融变体：仅改进三（稀疏惩罚适应度）。"""
     def __init__(self, target_col, band_range, logger=None, **kwargs):
         kwargs.setdefault('enable_chaos_init',       False)
         kwargs.setdefault('enable_nonlinear_energy', False)
         kwargs.setdefault('enable_elite_memory',     False)
-        kwargs.setdefault('enable_nrmse_fitness',    True)
         super().__init__(target_col, band_range, logger, **kwargs)
